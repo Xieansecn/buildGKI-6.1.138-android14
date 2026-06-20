@@ -6,6 +6,14 @@ on:
         description: 'Patch kernel (Droidspace requires)'
         type: boolean
         default: true
+      patch_file:
+        description: 'Patch file path'
+        type: choice
+        default: '001.GKI-below-6.12-fix_sysvipc_kabi_3_4_5.patch'
+        options:
+          - '001.GKI-below-6.12-fix_sysvipc_kabi_1_2_3.patch'
+          - '001.GKI-below-6.12-fix_sysvipc_kabi_3_4_5.patch'
+          - '001.GKI-below-6.12-fix_sysvipc_kabi_6_7_8.patch'
     
 jobs:
   build:
@@ -52,7 +60,7 @@ jobs:
         if: ${{ inputs.patch == true }}
         working-directory: ${{ github.workspace }}/common
         run: |
-          git apply ${{ github.workspace }}/001.GKI-below-6.12-fix_sysvipc_kabi_6_7_8.patch
+          git apply ${{ github.workspace }}/${{ inputs.patch_file }}
           git commit -am "Applied patch for Droidspace"
 
       - name: Build GKI kernel
