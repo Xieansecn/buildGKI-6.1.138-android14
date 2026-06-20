@@ -60,7 +60,7 @@ jobs:
         if: ${{ inputs.patch == true }}
         working-directory: ${{ github.workspace }}/common
         run: |
-          git apply ${{ github.workspace }}/${{ inputs.patch_file }}
+          patch -p1 -F 5 --ignore-whitespace < ${{ github.workspace }}/${{ inputs.patch_file }}
           git commit -am "Applied patch for Droidspace"
 
       - name: Build GKI kernel
