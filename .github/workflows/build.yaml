@@ -47,7 +47,7 @@ jobs:
 
       - name: Sync kernel sources with repo
         run: |
-          repo init -u https://android.googlesource.com/kernel/manifest -b common-android14-6.1-2025-06 --depth=1
+          repo init -u https://android.googlesource.com/kernel/manifest -b common-android14-6.1 --depth=1
           repo sync -c --no-tags --no-clone-bundle -j$(nproc)
 
       - name: Setup fragment
@@ -66,9 +66,9 @@ jobs:
       - name: Build GKI kernel
         run: |
           if [ "${{ inputs.patch }}" == "true" ]; then
-            tools/bazel run //common:kernel_aarch64_dist --lto=thin --defconfig_fragment=//common:arch/arm64/configs/droidspace_requires.fragment -- --dist_dir=out/dist
+            tools/bazel run //common:kernel_aarch64_dist --defconfig_fragment=//common:arch/arm64/configs/droidspace_requires.fragment -- --dist_dir=out/dist
           else
-            tools/bazel run //common:kernel_aarch64_dist --lto=thin -- --dist_dir=out/dist
+            tools/bazel run //common:kernel_aarch64_dist -- --dist_dir=out/dist
           fi
 
       - name: Display Info
