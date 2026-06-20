@@ -22,18 +22,24 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v6
 
-      - name: Set up JDK 11
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-
       - name: Install dependencies
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: >-
+            git curl rsync repo cpio kmod
+            build-essential gcc g++ libc6-dev
+            libssl-dev libelf-dev openssl
+            lz4 xz-utils zstd p7zip-full libarchive-tools
+            bison flex bc
+            libtinfo6 libncurses-dev libreadline-dev
+          version: 1.0
+
+      - name: Install libtinfo5
         run: |
-          sudo apt update && sudo apt install -y git device-tree-compiler lz4 xz-utils zlib1g-dev openjdk-17-jdk gcc g++ python3 python-is-python3 p7zip-full android-sdk-libsparse-utils erofs-utils \
-          default-jdk git gnupg flex bison gperf build-essential zip curl libc6-dev libncurses-dev libx11-dev libreadline-dev libgl1 libgl1-mesa-dev \
-          python3 make sudo gcc g++ bc grep tofrodos python3-markdown libxml2-utils xsltproc zlib1g-dev python-is-python3 libc6-dev libtinfo6 \
-          make repo cpio kmod openssl libelf-dev pahole libssl-dev libarchive-tools zstd rsync --fix-missing && wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb && sudo dpkg -i libtinfo5_6.3-2ubuntu0.1_amd64.deb
+          if ! dpkg -s libtinfo5 >/dev/null 2>&1; then
+            wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
+            sudo dpkg -i libtinfo5_6.3-2ubuntu0.1_amd64.deb
+          fi
       
       - name: Configure git identity
         run: |
@@ -47,7 +53,7 @@ jobs:
 
       - name: Sync kernel sources with repo
         run: |
-          repo init -u https://android.googlesource.com/kernel/manifest -b common-android14-6.1 --depth=1
+          repo init -u https://android.googlesource.com/kernel/manifest -b common-android14-6.1-2025-06 --depth=1
           repo sync -c --no-tags --no-clone-bundle -j$(nproc)
 
       - name: Setup fragment
@@ -64,6 +70,8 @@ jobs:
           git commit -am "Applied patch for Droidspace"
 
       - name: Build GKI kernel
+        env:
+          MAKEFLAGS: -j$(nproc)
         run: |
           if [ "${{ inputs.patch }}" == "true" ]; then
             tools/bazel run //common:kernel_aarch64_dist --defconfig_fragment=//common:arch/arm64/configs/droidspace_requires.fragment -- --dist_dir=out/dist
@@ -76,7 +84,6 @@ jobs:
           printf "GKI kernel build completed. Displaying artifact information:"
           uname -a
           ls -lh out/dist/
-          ls -lh build/kernel/kleaf/bazelrc/
           du -sh out/dist/
 
       - name: Upload GKI kernel artifacts
